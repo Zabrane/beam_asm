@@ -8,6 +8,19 @@ KERL ?= kerl
 # List of OTP versions to build with (default: every kerl installations)
 OTP_VSNS ?= $(shell $(KERL) list installations | cut -d' ' -f1)
 
+# CPU frequency used for running the tests
+CPU_FREQ ?= 2.6GHz
+
+# ----------------------------------------------------------------------
+# Variables used for locking/unlocking CPU frequency
+# ----------------------------------------------------------------------
+
+# The number of CPU-s
+CPU_CNT := $(shell nproc)
+
+# The list of CPU ids
+CPUS := $(shell seq 0 $$(( $(CPU_CNT) - 1 )))
+
 ifdef OTP_VSN
 # ----------------------------------------------------------------------
 # Variables used when building with a specific OTP version
@@ -64,3 +77,17 @@ $(ASM_MARKER): $(ERL_SRCS) | $(BUILD_DIR)/asm
 
 $(BUILD_DIRS):
 	mkdir -p $@
+
+# ----------------------------------------------------------------------
+# Helper rules for locking/unlocking CPU frequency
+# ----------------------------------------------------------------------
+
+.PHONY: lockcpu
+lockcpu: $(addprefix lockcpu.,$(CPUS))
+lockcpu.%:
+	sudo cpufreq-set -c $* -g performance --min $(CPU_FREQ) --max $(CPU_FREQ)
+
+.PHONY: unlockcpu
+unlockcpu: $(addprefix unlockcpu.,$(CPUS))
+unlockcpu.%:
+	sudo cpufreq-set -c $* -g powersave --min $$(cpufreq-info -l | sed 's/ / --max /')
