@@ -12,7 +12,7 @@ OTP_VSNS ?= $(shell $(KERL) list installations | cut -d' ' -f1)
 CPU_FREQ ?= 2.6GHz
 
 # ----------------------------------------------------------------------
-# Variables used for locking/unlocking CPU frequency
+# Variables used when running performance tests
 # ----------------------------------------------------------------------
 
 # The number of CPU-s
@@ -20,6 +20,9 @@ CPU_CNT := $(shell nproc)
 
 # The list of CPU ids
 CPUS := $(shell seq 0 $$(( $(CPU_CNT) - 1 )))
+
+# Flags to pass to the emulator
+ERL_FLAGS := +K true +sbt db +scl false +sbwt very_long
 
 ifdef OTP_VSN
 # ----------------------------------------------------------------------
@@ -56,12 +59,19 @@ all: $(OTP_VSNS)
 
 .PHONY: $(OTP_VSNS)
 $(OTP_VSNS):
+	@echo =========== $@ ===========
 	. $(lastword $(shell $(KERL) list installations | grep '^$@ '))/activate && \
-	$(MAKE) OTP_VSN=$@ build_with_otp
+	$(MAKE) OTP_VSN=$@ build_with_otp test_with_otp
 
 .PHONY: clean
 clean:
 	rm -rf build
+
+.PHONY: test_with_otp
+test_with_otp: build_with_otp
+	$(MAKE) lockcpu
+	erl $(ERL_FLAGS) -pa $(BUILD_DIR)/ebin -noshell -s perftest -s init stop
+	$(MAKE) unlockcpu
 
 .PHONY: build_with_otp
 build_with_otp: $(BEAM_MARKER) $(ASM_MARKER)

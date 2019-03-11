@@ -114,11 +114,22 @@ generate_args([{Arg, Values} | Args]) ->
 
 test(Mod, ImplMod, Args) ->
   {module, ImplMod} = code:ensure_loaded(ImplMod),
+  process_flag(scheduler, 1),
   N = 1000,
-  Times = test_loop(Mod, ImplMod, Args, N),
+  Warmup = 10,
+  Times = lists:sort(
+            lists:nthtail(
+              Warmup,
+              test_loop(Mod, ImplMod, Args, N + Warmup))),
+  Median = lists:nth(N div 2, Times),
   Mean = lists:sum(Times) / N,
-  Dev = math:sqrt(lists:sum([(Time - Mean) * (Time - Mean) || Time <- Times]) / (N - 1)),
-  io:format("~10.3f +- ~10.3f ns [~p] ~p~n", [Mean, Dev, ImplMod, Args]).
+  Dev = math:sqrt(
+          lists:sum([(Time - Mean) * (Time - Mean) || Time <- Times])
+          / (N - 1)),
+  io:format("median: ~7b ns mean: ~10.3f +- ~10.3f ns [~w] ~w~n",
+            [Median, Mean, Dev, ImplMod, Args]),
+  process_flag(scheduler, 0),
+  ok.
 
 test_loop(Mod, ImplMod, Args, N) when N > 0 ->
   S = self(),
@@ -130,6 +141,8 @@ test_loop(_, _, _, 0) ->
   [].
 
 test_proc(Mod, ImplMod, Args) ->
+  process_flag(scheduler, erlang:system_info(schedulers)),
+  process_flag(priority, max),
   {ok, FunArgs, State} = Mod:setup(Args),
   erlang:yield(),
   T1 = os:perf_counter(),
