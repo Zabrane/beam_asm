@@ -12,6 +12,14 @@ OTP_VSNS ?= $(shell $(KERL) list installations | cut -d' ' -f1)
 CPU_FREQ ?= 2.6GHz
 
 # ----------------------------------------------------------------------
+# Helper variables
+# ----------------------------------------------------------------------
+
+SPACE :=
+SPACE +=
+COMMA := ,
+
+# ----------------------------------------------------------------------
 # Variables used when running performance tests
 # ----------------------------------------------------------------------
 
@@ -33,7 +41,7 @@ ifdef OTP_VSN
 BUILD_DIR := build/$(OTP_VSN)
 
 # The OTP version-specific build directories
-BUILD_DIRS := $(addprefix $(BUILD_DIR)/,asm ebin)
+BUILD_DIRS := $(addprefix $(BUILD_DIR)/,asm ebin bapp bin)
 
 # Erlang source files: compiled to both .S and .beam files
 ERL_SRCS := $(wildcard src/*.erl)
@@ -43,6 +51,13 @@ ASM_SRCS := $(wildcard asm/*.S)
 
 # Test source files: compiled to .beam files only
 TEST_SRCS := $(wildcard test/*.erl)
+
+# Source files of the bapp escript
+BAPP_XRL_SRCS := $(wildcard bapp/*.xrl)
+BAPP_YRL_SRCS := $(wildcard bapp/*.yrl)
+BAPP_ERL_GENS := $(addprefix $(BUILD_DIR)/bapp/,$(notdir $(addsuffix .erl,$(basename $(BAPP_XRL_SRCS) $(BAPP_YRL_SCRCS)))))
+BAPP_ERL_SRCS := $(wildcard bapp/*.erl) $(BAPP_ERL_GENS)
+BAPP_BEAMS := $(addprefix $(BUILD_DIR)/bapp/,$(notdir $(addsuffix .beam,$(basename $(BAPP_ERL_SRCS)))))
 
 # Marker files used for compiling multiple sources in one go
 BEAM_MARKER := $(BUILD_DIR)/.beam-marker
@@ -74,7 +89,7 @@ test_with_otp: build_with_otp
 	$(MAKE) unlockcpu
 
 .PHONY: build_with_otp
-build_with_otp: $(BEAM_MARKER) $(ASM_MARKER)
+build_with_otp: $(BEAM_MARKER) $(ASM_MARKER) $(BUILD_DIR)/bin/bapp
 
 $(BEAM_MARKER): $(ERL_SRCS) $(TEST_SRCS) $(ASM_SRCS) | $(BUILD_DIR)/ebin
 	$(if $(findstring test/perftest.erl,$?),erlc -o $(BUILD_DIR) test/perftest.erl,)
@@ -84,6 +99,21 @@ $(BEAM_MARKER): $(ERL_SRCS) $(TEST_SRCS) $(ASM_SRCS) | $(BUILD_DIR)/ebin
 $(ASM_MARKER): $(ERL_SRCS) | $(BUILD_DIR)/asm
 	erlc -o $(BUILD_DIR)/asm -S $?
 	touch $(ASM_MARKER)
+
+$(BUILD_DIR)/bin/bapp: $(BAPP_ERL_SRCS) | $(BUILD_DIR)/bin $(BUILD_DIR)/bapp
+	erlc -o $(BUILD_DIR)/bapp $?
+	cd $(BUILD_DIR)/bapp && \
+	erl -noshell \
+	    -noinput \
+	    -eval 'ok = escript:create("../bin/bapp", [shebang, {archive, ["$(subst $(SPACE),"$(COMMA)",$(strip $(notdir $(BAPP_BEAMS))))"], []}]).' \
+	    -eval 'init:stop().'
+	chmod +x $@
+
+$(BUILD_DIR)/bapp/%.erl: bapp/%.xrl | $(BUILD_DIR)/bapp
+	erlc -o $(BUILD_DIR)/bapp $<
+
+$(BUILD_DIR)/bapp/%.erl: bapp/%.yrl | $(BUILD_DIR)/bapp
+	erlc -o $(BUILD_DIR)/bapp $<
 
 $(BUILD_DIRS):
 	mkdir -p $@
