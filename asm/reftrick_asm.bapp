@@ -1,0 +1,94 @@
+-exports([run/2]).
+
+%% args:  Pid1 Pid2
+%% stack: Pid1 Pid2 Mon1 Mon2 Msg
+run/2 ->
+  allocate_zero 5 2
+  move x0 y0
+  move x1 y1
+
+  % monitor Pid1
+  move x0 x1
+  move process x0
+  recv_mark @receive
+  call_ext fun erlang:monitor/2
+  move x0 y2
+
+  % monitor Pid2
+  move y1 x1
+  move process x0
+  call_ext fun erlang:monitor/2
+  move x0 y3
+
+  % build message
+  bif self @0 [] x0
+  test_heap 4 1
+  put_tuple 3 y4
+  put request
+  put y2
+  put x0
+
+  % Pid1 ! Message
+  move y0 x0
+  move y4 x1
+  send
+
+  % Pid2 ! Message
+  move y1 x0
+  move y4 x1
+  send
+
+  recv_set @receive
+  % receive a message
+  @receive
+  loop_rec @wait x0
+  ?is_tuple @next_msg x0
+  select_tuple_arity x0 @next_msg [3, @receive_response, 5, @receive_down] % with list!
+
+  @receive_response
+  get_tuple_element x0 0 x1
+  ?is_eq_exact @next_msg x1 response
+  get_tuple_element x0 1 x1
+  ?is_eq_exact @next_msg x1 y2
+
+  % construct {ok, element(3, x0)}
+  test_heap 3 1
+  get_tuple_element x0 2 x1
+  remove_message
+  put_tuple 2 x0
+  put ok
+  put x1
+  deallocate 5
+  return
+
+  @receive_down
+  get_tuple_element x0 0 x1
+  ?is_eq_exact @next_msg x1 'DOWN'
+  get_tuple_element x0 2 x1
+  ?is_eq_exact @next_msg x1 process
+  get_tuple_element x0 1 x1
+  get_tuple_element x0 3 x2
+  ?is_eq_exact @try_down_2 x1 y0
+  ?is_ne_exact @down_confirmed x2 y2
+
+  @try_down_2
+  ?is_eq_exact @next_msg x1 y1
+  ?is_eq_exact @next_msg x2 y2
+
+  % construct {error, element(5, x0)}
+  @down_confirmed
+  test_heap 3 1
+  get_tuple_element x0 4 x1
+  remove_message
+  put_tuple 2 x0
+  put error
+  put x1
+  deallocate 5
+  return
+
+  @next_msg
+  loop_rec_end @receive
+
+  @wait
+  wait @receive
+.

@@ -2,6 +2,8 @@
 # Environment specific parameters
 # ----------------------------------------------------------------------
 
+-include local.mk
+
 # Where to find the kerl executable
 KERL ?= kerl
 
@@ -46,8 +48,9 @@ BUILD_DIRS := $(addprefix $(BUILD_DIR)/,asm ebin bapp bin)
 # Erlang source files: compiled to both .S and .beam files
 ERL_SRCS := $(wildcard src/*.erl)
 
-# Assembler source files: compiled to .beam files
-ASM_SRCS := $(wildcard asm/*.S)
+# Bapp source files: compiled to .S and .beam files
+BAPP_SRCS := $(wildcard asm/*.bapp)
+BAPP_ASM_SRCS := $(addprefix $(BUILD_DIR)/asm/,$(notdir $(addsuffix .S,$(basename $(BAPP_SRCS)))))
 
 # Test source files: compiled to .beam files only
 TEST_SRCS := $(wildcard test/*.erl)
@@ -55,7 +58,7 @@ TEST_SRCS := $(wildcard test/*.erl)
 # Source files of the bapp escript
 BAPP_XRL_SRCS := $(wildcard bapp/*.xrl)
 BAPP_YRL_SRCS := $(wildcard bapp/*.yrl)
-BAPP_ERL_GENS := $(addprefix $(BUILD_DIR)/bapp/,$(notdir $(addsuffix .erl,$(basename $(BAPP_XRL_SRCS) $(BAPP_YRL_SCRCS)))))
+BAPP_ERL_GENS := $(addprefix $(BUILD_DIR)/bapp/,$(notdir $(addsuffix .erl,$(basename $(BAPP_XRL_SRCS) $(BAPP_YRL_SRCS)))))
 BAPP_ERL_SRCS := $(wildcard bapp/*.erl) $(BAPP_ERL_GENS)
 BAPP_BEAMS := $(addprefix $(BUILD_DIR)/bapp/,$(notdir $(addsuffix .beam,$(basename $(BAPP_ERL_SRCS)))))
 
@@ -91,13 +94,13 @@ test_with_otp: build_with_otp
 .PHONY: build_with_otp
 build_with_otp: $(BEAM_MARKER) $(ASM_MARKER) $(BUILD_DIR)/bin/bapp
 
-$(BEAM_MARKER): $(ERL_SRCS) $(TEST_SRCS) $(ASM_SRCS) | $(BUILD_DIR)/ebin
+$(BEAM_MARKER): $(ERL_SRCS) $(TEST_SRCS) $(BAPP_ASM_SRCS) | $(BUILD_DIR)/ebin
 	$(if $(findstring test/perftest.erl,$?),erlc -o $(BUILD_DIR) test/perftest.erl,)
 	erlc -pz $(BUILD_DIR) -o $(BUILD_DIR)/ebin $?
 	touch $(BEAM_MARKER)
 
 $(ASM_MARKER): $(ERL_SRCS) | $(BUILD_DIR)/asm
-	erlc -o $(BUILD_DIR)/asm -S $?
+	erlc -o $(BUILD_DIR)/asm -S +no_line_info $?
 	touch $(ASM_MARKER)
 
 $(BUILD_DIR)/bin/bapp: $(BAPP_ERL_SRCS) | $(BUILD_DIR)/bin $(BUILD_DIR)/bapp
@@ -113,7 +116,10 @@ $(BUILD_DIR)/bapp/%.erl: bapp/%.xrl | $(BUILD_DIR)/bapp
 	erlc -o $(BUILD_DIR)/bapp $<
 
 $(BUILD_DIR)/bapp/%.erl: bapp/%.yrl | $(BUILD_DIR)/bapp
-	erlc -o $(BUILD_DIR)/bapp $<
+	erlc -o $(BUILD_DIR)/bapp -v $<
+
+$(BUILD_DIR)/asm/%.S: asm/%.bapp | $(BUILD_DIR)/bin/bapp $(BUILD_DIR)/asm
+	$(BUILD_DIR)/bin/bapp -o $(BUILD_DIR)/asm $<
 
 $(BUILD_DIRS):
 	mkdir -p $@

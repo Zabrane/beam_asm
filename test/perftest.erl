@@ -116,7 +116,7 @@ test(Mod, ImplMod, Args) ->
   {module, ImplMod} = code:ensure_loaded(ImplMod),
   process_flag(scheduler, 1),
   N = 1000,
-  Warmup = 10,
+  Warmup = 100,
   Times = lists:sort(
             lists:nthtail(
               Warmup,
