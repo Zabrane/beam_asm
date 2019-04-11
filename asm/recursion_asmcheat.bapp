@@ -1,0 +1,24 @@
+-exports([run/2]).
+
+%% args: A B
+run/2 ->
+  @top
+  ?is_lt @ordered x0 x1
+  move x1 x2
+  move x0 x1
+  move x2 x0
+
+  @ordered
+  ?is_ge @@ x0 0
+  ?is_ge @@ x1 0
+
+  @regular
+  ?is_eq_exact @divide x1 0
+  return
+
+  @divide
+  gc_bif rem @0 2 [x0, x1] x2
+  move x1 x0
+  move x2 x1
+  jump @regular
+.

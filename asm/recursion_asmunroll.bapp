@@ -1,0 +1,80 @@
+-exports([run/2]).
+
+%% args: A B
+run/2 ->
+  @top
+  ?is_lt @ordered x0 x1
+  move x1 x2
+  move x0 x1
+  move x2 x0
+
+  @ordered
+  ?is_ge @@ x0 0
+  ?is_ge @@ x1 0
+
+  @regular
+  ?is_eq_exact @divide x1 0
+  return
+  @divide
+  gc_bif rem @0 2 [x0, x1] x2
+  move x1 x0
+  move x2 x1
+
+  ?is_eq_exact @divide_ x1 0
+  return
+  @divide_
+  gc_bif rem @0 2 [x0, x1] x2
+  move x1 x0
+  move x2 x1
+
+  ?is_eq_exact @divide__ x1 0
+  return
+  @divide__
+  gc_bif rem @0 2 [x0, x1] x2
+  move x1 x0
+  move x2 x1
+
+  ?is_eq_exact @divide___ x1 0
+  return
+  @divide___
+  gc_bif rem @0 2 [x0, x1] x2
+  move x1 x0
+  move x2 x1
+
+  ?is_eq_exact @divide____ x1 0
+  return
+  @divide____
+  gc_bif rem @0 2 [x0, x1] x2
+  move x1 x0
+  move x2 x1
+
+  ?is_eq_exact @divide_____ x1 0
+  return
+  @divide_____
+  gc_bif rem @0 2 [x0, x1] x2
+  move x1 x0
+  move x2 x1
+
+  ?is_eq_exact @divide______ x1 0
+  return
+  @divide______
+  gc_bif rem @0 2 [x0, x1] x2
+  move x1 x0
+  move x2 x1
+
+  ?is_eq_exact @divide_______ x1 0
+  return
+  @divide_______
+  gc_bif rem @0 2 [x0, x1] x2
+  move x1 x0
+  move x2 x1
+
+  ?is_eq_exact @divide________ x1 0
+  return
+  @divide________
+  gc_bif rem @0 2 [x0, x1] x2
+  move x1 x0
+  move x2 x1
+
+  jump @regular
+.
