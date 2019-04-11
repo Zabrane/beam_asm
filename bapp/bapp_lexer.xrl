@@ -16,6 +16,7 @@ fun\s : {token, {'fun', TokenLine}}.
 \[|\]|[(){}/,.:?]|#\{|<<|>>|=> : {token, {list_to_atom(TokenChars), TokenLine}}.
 
 % Bapp-specific data types: labels and registers
+@@ : {token, {label, TokenLine, TokenChars}}.
 @[a-zA-Z0-9_]+ : {token, {label, TokenLine, TokenChars}}.
 [xy][0-9]+ : {token, {register, TokenLine, {list_to_atom([hd(TokenChars)]), list_to_integer(tl(TokenChars))}}}.
 

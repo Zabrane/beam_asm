@@ -170,7 +170,7 @@ number_labels(State = #{code := Code}) ->
 number_labels_fun_fold({_FunName, Ops}, Labels) ->
   lists:foldl(fun number_labels_ops_fold/2, Labels, Ops).
 
-number_labels_ops_fold({label, Label}, Labels) ->
+number_labels_ops_fold({label, Label}, Labels) when Label =/= "@@" ->
   Labels#{Label => maps:size(Labels)};
 number_labels_ops_fold(_Op, Labels) ->
   Labels.
@@ -195,9 +195,10 @@ to_asm_terms(State = #{ code := Code
 to_asm_terms_fun_fold([], _Labels, Acc) ->
   {ok, lists:reverse(Acc)};
 to_asm_terms_fun_fold([{{F, A}, Ops} | Funs], Labels, Acc) ->
-  [{label, _}, {op, func_info, _}, {label, Label} | _] = Ops,
+  [{label, FuncClauseLabel}, {op, func_info, _}, {label, Label} | _] = Ops,
   FunctionTerm = {function, F, A, maps:get(Label, Labels)},
-  case to_asm_terms_ops_fold(Ops, Labels, [FunctionTerm | Acc]) of
+  ExtendedLabels = Labels#{"@@" => maps:get(FuncClauseLabel, Labels)},
+  case to_asm_terms_ops_fold(Ops, ExtendedLabels, [FunctionTerm | Acc]) of
     {ok, NewAcc} ->
       to_asm_terms_fun_fold(Funs, Labels, NewAcc);
     {error, _} = Error ->
