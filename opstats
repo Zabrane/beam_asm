@@ -1,0 +1,23 @@
+#!/usr/bin/env escript
+%% -*- erlang -*-
+-mode(compile).
+
+main(Files) ->
+  Stats = lists:foldl(fun update_stats/2, #{}, Files),
+  lists:foreach(fun print_stat/1, lists:sort(maps:to_list(Stats))).
+
+update_stats(File, Stats) ->
+  {ok, Terms} = file:consult(File),
+  lists:foldl(fun (Op, S) -> maps:update_with(Op, fun (Cnt) -> Cnt + 1 end, 1, S) end,
+              Stats,
+              lists:map(fun to_op/1, Terms)).
+
+print_stat({Op, Cnt}) ->
+  io:format("~s,~p~n", [Op, Cnt]).
+
+to_op({test, Op, _Label, _Args}) ->
+  Op;
+to_op(Op) when is_atom(Op) ->
+  Op;
+to_op(Tuple) when is_tuple(Tuple) ->
+  element(1, Tuple).

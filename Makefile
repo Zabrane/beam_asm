@@ -43,7 +43,7 @@ ifdef OTP_VSN
 BUILD_DIR := build/$(OTP_VSN)
 
 # The OTP version-specific build directories
-BUILD_DIRS := $(addprefix $(BUILD_DIR)/,asm ebin bapp bin)
+BUILD_DIRS := $(addprefix $(BUILD_DIR)/,asm mnesia ebin bapp bin)
 
 # Erlang source files: compiled to both .S and .beam files
 ERL_SRCS := $(wildcard src/*.erl)
@@ -61,6 +61,11 @@ BAPP_YRL_SRCS := $(wildcard bapp/*.yrl)
 BAPP_ERL_GENS := $(addprefix $(BUILD_DIR)/bapp/,$(notdir $(addsuffix .erl,$(basename $(BAPP_XRL_SRCS) $(BAPP_YRL_SRCS)))))
 BAPP_ERL_SRCS := $(wildcard bapp/*.erl) $(BAPP_ERL_GENS)
 BAPP_BEAMS := $(addprefix $(BUILD_DIR)/bapp/,$(notdir $(addsuffix .beam,$(basename $(BAPP_ERL_SRCS)))))
+
+# Source files of mnesia
+MNESIA_SRCS := $(wildcard mnesia/*.erl)
+MNESIA_ASMS := $(addprefix $(BUILD_DIR)/mnesia/,$(notdir $(addsuffix .S,$(basename $(MNESIA_SRCS)))))
+STATS := $(BUILD_DIR)/opstats.csv
 
 # Marker files used for compiling multiple sources in one go
 BEAM_MARKER := $(BUILD_DIR)/.beam-marker
@@ -92,7 +97,7 @@ test_with_otp: build_with_otp
 	$(MAKE) unlockcpu
 
 .PHONY: build_with_otp
-build_with_otp: $(BEAM_MARKER) $(ASM_MARKER) $(BUILD_DIR)/bin/bapp
+build_with_otp: $(BEAM_MARKER) $(ASM_MARKER) $(BUILD_DIR)/bin/bapp $(STATS)
 
 $(BEAM_MARKER): $(ERL_SRCS) $(TEST_SRCS) $(BAPP_ASM_SRCS) | $(BUILD_DIR)/ebin
 	$(if $(findstring test/perftest.erl,$?),erlc -o $(BUILD_DIR) test/perftest.erl,)
@@ -123,6 +128,13 @@ $(BUILD_DIR)/asm/%.S: asm/%.bapp | $(BUILD_DIR)/bin/bapp $(BUILD_DIR)/asm
 
 $(BUILD_DIRS):
 	mkdir -p $@
+
+$(STATS): $(MNESIA_ASMS) opstats
+	./opstats $(MNESIA_ASMS) > $@
+
+$(MNESIA_ASMS:.S=.%): $(MNESIA_SRCS) | $(BUILD_DIR)/mnesia
+	erlc -o $(BUILD_DIR)/mnesia -S +no_line_info $?
+	touch $(MNESIA_ASMS)
 
 # ----------------------------------------------------------------------
 # Helper rules for locking/unlocking CPU frequency
