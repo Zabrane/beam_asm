@@ -316,7 +316,7 @@ encode(Fun, _Labels, Options) when is_function(Fun) ->
 encode(L, Labels, Options) when is_list(L) ->
   case proplists:get_bool(lists_as_nonliterals, Options) of
     true ->
-      encode_all(L, Labels, proplists:delete(lists_as_nonliterals, Options));
+      encode_all(L, Labels, [{integers_as_terms, true} | proplists:delete(lists_as_nonliterals, Options)]);
     false ->
       case lists:any(fun ({register, _}) -> true;
                          ({label, _}) -> true;

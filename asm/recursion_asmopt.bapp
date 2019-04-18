@@ -16,10 +16,13 @@ run/2 ->
   move x2 x0
   call_only 2 @top % should be @ordered (0x30)
 
+  func_info recursion_asmopt run 2
   @ordered
   ?is_ge @@ x0 0
   ?is_ge @@ x1 0
+  jump @regular
 
+  func_info recursion_asmopt run 2
   @regular
   ?is_eq_exact @divide x1 0
   return
