@@ -8,8 +8,8 @@
         ]).
 
 args() ->
-  #{ gcd => [5, 17]
-   , iter => [5, 50, 500]
+  #{ gcd => [17]
+   , iter => [500, 50, 5]
    }.
 
 setup(#{gcd := GCD, iter := Iter}) when Iter > 0 ->
@@ -41,4 +41,4 @@ load_and_hack(Mod) ->
 
 hack(Code) ->
   [P1, P2, P3] = binary:split(Code, <<16#062025:24>>, [global]),
-  <<P1/binary, 16#063025:24, P2/binary, 16#064025:24, P3/binary>>.
+  <<P1/binary, 16#062035:24, P2/binary, 16#062035:24, P3/binary>>.

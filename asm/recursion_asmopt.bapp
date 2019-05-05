@@ -1,12 +1,17 @@
--exports([run/2]).
-%% This module needs some editing after compilation, because erlc
-%% cannot compile call_only ops referencing a non-default function
-%% label.
+%% This is the intended optimisation of the plain _asm version: the
+%% function is augmented with some more func_info ops (to make
+%% additional entry points), and recursive steps go directly to these
+%% labels.
+%%
+%% Unfortunately, the code in its desired state wouldn't compile,
+%% because erlc cannot handle call_only ops referencing a non-default
+%% function label. The workaround is to do some editing after
+%% compilation.
 %%
 %% There are two call_only instructions in the beam (0x06 0x20 0x25),
-%% the first one shall be replaced with 0x06 0x30 0x25, the second one
-%% with 0x06 0x40 0x25.
-
+%% the first one shall be replaced with 0x06 0x20 0x45, the second one
+%% with 0x06 0x20 0x65.
+-exports([run/2]).
 %% args: A B
 run/2 ->
   @top
@@ -14,14 +19,16 @@ run/2 ->
   move x1 x2
   move x0 x1
   move x2 x0
-  call_only 2 @top % should be @ordered (0x30)
+  call_only 2 @top % should be @ordered (0x45)
 
+  @ordered_func_info
   func_info recursion_asmopt run 2
   @ordered
   ?is_ge @@ x0 0
   ?is_ge @@ x1 0
   jump @regular
 
+  @regular_func_info
   func_info recursion_asmopt run 2
   @regular
   ?is_eq_exact @divide x1 0
@@ -31,5 +38,5 @@ run/2 ->
   gc_bif rem @0 2 [x0, x1] x2
   move x1 x0
   move x2 x1
-  call_only 2 @top % should be @regular (0x40)
+  call_only 2 @top % should be @regular (0x65)
 .

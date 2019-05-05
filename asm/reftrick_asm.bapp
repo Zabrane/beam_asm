@@ -68,12 +68,13 @@ run/2 ->
   ?is_eq_exact @next_msg x1 process
   get_tuple_element x0 1 x1
   get_tuple_element x0 3 x2
-  ?is_eq_exact @try_down_2 x1 y0
-  ?is_ne_exact @down_confirmed x2 y2
+  ?is_eq_exact @try_down_2 x2 y2
+  ?is_ne_exact @down_confirmed x1 y0
+  jump @next_msg
 
   @try_down_2
   ?is_eq_exact @next_msg x1 y1
-  ?is_eq_exact @next_msg x2 y2
+  ?is_eq_exact @next_msg x2 y3
 
   % construct {error, element(5, x0)}
   @down_confirmed

@@ -1,3 +1,7 @@
+%% An other solution halfway between _asmcheat and plain old _asm:
+%%
+%% - 8 loops are unrolled (with jumps)
+%% - After the loops, a call_only op is used (to the top of the function)
 -exports([run/2]).
 
 %% args: A B
@@ -76,5 +80,12 @@ run/2 ->
   move x1 x0
   move x2 x1
 
-  jump @regular
+  ?is_eq_exact @divide_________ x1 0
+  return
+  @divide_________
+  gc_bif rem @0 2 [x0, x1] x2
+  move x1 x0
+  move x2 x1
+
+  call_only 2 @top
 .

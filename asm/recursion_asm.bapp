@@ -1,3 +1,6 @@
+%% This is the same algorithm as the Erlang version. The guard tests
+%% are rearranged a bit, but that's all. No tricky optimisations are
+%% used, they will be added in later variants.
 -exports([run/2]).
 
 %% args: A B

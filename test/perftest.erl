@@ -114,6 +114,9 @@ generate_args([{Arg, Values} | Args]) ->
 
 test(Mod, ImplMod, Args) ->
   {module, ImplMod} = code:ensure_loaded(ImplMod),
+  erlang:system_flag(schedulers_online, 1),
+  timer:sleep(100),
+  erlang:system_flag(schedulers_online, erlang:system_info(schedulers)),
   process_flag(scheduler, 1),
   N = 1000,
   Warmup = 100,

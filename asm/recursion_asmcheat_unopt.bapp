@@ -1,3 +1,12 @@
+%% This solution is halfway between _asmcheat and plain old _asm:
+%%
+%% - It still does jump ops instead of call_only ops.
+%% - However, it jumps to the entry point on recursion.
+%%
+%% Therefore the difference between the speed of _asmcheat_unopt and
+%% _asmcheat is the cost of the additional tests, and the difference
+%% between the speed of _asmcheat_unopt and _asm is the overhead of a
+%% calls over jumps.
 -exports([run/2]).
 
 %% args: A B

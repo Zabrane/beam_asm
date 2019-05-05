@@ -1,3 +1,8 @@
+%% This is the same as _asmopt, but call_only ops are replaced with
+%% jump ops to make the code compile (at least on OTP 22).
+%%
+%% This is cheating because a jump does not bump the reduction count
+%% of the process and is more lightweight than a local function call.
 -exports([run/2]).
 
 %% args: A B

@@ -11,7 +11,7 @@
         ]).
 
 args() ->
-  #{ msg_queue => lists:reverse([0, 10, 100, 1000, 10000])
+  #{ msg_queue => lists:reverse([0, 10, 100, 1000, 2500, 5000, 7500, 10000])
    }.
 
 setup(#{msg_queue := MsgQueue}) ->
