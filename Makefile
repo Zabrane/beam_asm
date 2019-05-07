@@ -43,7 +43,7 @@ ifdef OTP_VSN
 BUILD_DIR := build/$(OTP_VSN)
 
 # The OTP version-specific build directories
-BUILD_DIRS := $(addprefix $(BUILD_DIR)/,asm mnesia ebin bapp bin)
+BUILD_DIRS := $(addprefix $(BUILD_DIR)/,asm otp ebin bapp bin)
 
 # Erlang source files: compiled to both .S and .beam files
 ERL_SRCS := $(wildcard src/*.erl)
@@ -62,9 +62,9 @@ BAPP_ERL_GENS := $(addprefix $(BUILD_DIR)/bapp/,$(notdir $(addsuffix .erl,$(base
 BAPP_ERL_SRCS := $(wildcard bapp/*.erl) $(BAPP_ERL_GENS)
 BAPP_BEAMS := $(addprefix $(BUILD_DIR)/bapp/,$(notdir $(addsuffix .beam,$(basename $(BAPP_ERL_SRCS)))))
 
-# Source files of mnesia
-MNESIA_SRCS := $(wildcard mnesia/*.erl)
-MNESIA_ASMS := $(addprefix $(BUILD_DIR)/mnesia/,$(notdir $(addsuffix .S,$(basename $(MNESIA_SRCS)))))
+# Source files taken from otp
+OTP_SRCS := $(wildcard otp/*.erl)
+OTP_ASMS := $(addprefix $(BUILD_DIR)/otp/,$(notdir $(addsuffix .S,$(basename $(OTP_SRCS)))))
 STATS := $(BUILD_DIR)/opstats.csv
 
 # Marker files used for compiling multiple sources in one go
@@ -129,12 +129,12 @@ $(BUILD_DIR)/asm/%.S: asm/%.bapp | $(BUILD_DIR)/bin/bapp $(BUILD_DIR)/asm
 $(BUILD_DIRS):
 	mkdir -p $@
 
-$(STATS): $(MNESIA_ASMS) opstats
-	./opstats $(MNESIA_ASMS) > $@
+$(STATS): $(OTP_ASMS) opstats
+	./opstats $(OTP_ASMS) > $@
 
-$(MNESIA_ASMS:.S=.%): $(MNESIA_SRCS) | $(BUILD_DIR)/mnesia
-	erlc -o $(BUILD_DIR)/mnesia -S +no_line_info $?
-	touch $(MNESIA_ASMS)
+$(OTP_ASMS:.S=.%): $(OTP_SRCS) | $(BUILD_DIR)/otp
+	erlc -o $(BUILD_DIR)/otp -S +no_line_info $?
+	touch $(OTP_ASMS)
 
 # ----------------------------------------------------------------------
 # Helper rules for locking/unlocking CPU frequency
