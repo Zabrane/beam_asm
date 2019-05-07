@@ -9,7 +9,7 @@
 
 args() ->
   #{ gcd => [17]
-   , iter => [500, 50, 5]
+   , iter => [500, 400, 300, 200, 100, 50, 5]
    }.
 
 setup(#{gcd := GCD, iter := Iter}) when Iter > 0 ->
