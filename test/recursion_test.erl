@@ -39,6 +39,10 @@ load_and_hack(Mod) ->
   {module, Mod} = code:load_binary(Mod, File, Beam),
   ok.
 
+%% This hack doesn't work as intended: we can jump to label @ordered,
+%% but not to @regular. The latter would take us to @divide for some
+%% reason. Probably the beam's internal state gets a bit messed up
+%% when loading this hacked module?
 hack(Code) ->
   [P1, P2, P3] = binary:split(Code, <<16#062025:24>>, [global]),
   <<P1/binary, 16#062035:24, P2/binary, 16#062035:24, P3/binary>>.
